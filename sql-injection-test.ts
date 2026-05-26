@@ -9,7 +9,10 @@ const pgClient = new pg.Client(
 async function test2(req,res,next) {
 const pool=new Pool(a)
 // ruleid: express-pg-sqli
-pool.query("INSERT INTO profiledb (profilename, profiledescription, approved) VALUES ('"+  req.query.profileTitle +"', '"+ req.query.profileBody +"', 'Pending');");
+pool.query(
+  'INSERT INTO profiledb (profilename, profiledescription, approved) VALUES ($1, $2, $3)',
+  [req.query.profileTitle, req.query.profileBody, 'Pending'],
+);
 // ok: express-pg-sqli
 const res = await pool.query('SELECT NOW()')
 
