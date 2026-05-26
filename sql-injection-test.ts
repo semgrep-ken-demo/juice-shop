@@ -1,47 +1,54 @@
-import { Client } from "pg";
+const { Pool, Client } = require('pg')
 
-const client = new Client({ connectionString: process.env.DATABASE_URL });
-let connected = false;
+const pg = require('pg')
 
-async function query(text: string, values?: unknown[]) {
-  if (!connected) {
-    await client.connect();
-    connected = true;
-  }
-  return client.query(text, values);
+const pgClient = new pg.Client(
+  `postgresql://`,
+)
+
+async function test2(req,res,next) {
+const pool=new Pool(a)
+// ruleid: express-pg-sqli
+pool.query(
+  'INSERT INTO profiledb (profilename, profiledescription, approved) VALUES ($1, $2, $3)',
+  [req.query.profileTitle, req.query.profileBody, 'Pending'],
+);
+// ok: express-pg-sqli
+const res = await pool.query('SELECT NOW()')
+
+const text = 'INSERT INTO users(name, email) VALUES($1, $2) RETURNING *'
+const values = [req.query.name, req.query.profileBody]
+const text1 = `INSERT INTO users(name, email) VALUES(${req.query.name}, ${req.query.profileBody}) RETURNING *`
+
+// ok: express-pg-sqli
+client.query(text, values, (err, res) => {})
+await pool.end()
+
+
+const client = new Client()
+await client.connect()
+// ruleid: express-pg-sqli
+const res = await client.query("INSERT INTO profiledb (profilename, profiledescription, approved) VALUES ('"+ 
+req.query.profileTitle +"', '"+ req.query.profileBody +"', 'Pending');");
+
+const sleep = Number(req.body.sleep);
+if (!Number.isFinite(sleep)) {
+  throw new TypeError('Invalid req.body.sleep');
 }
 
-// VULNERABLE: string concatenation
-async function getUserByName(name: string) {
-  const sql = "SELECT * FROM users WHERE name = '" + name + "'";
-  return query(sql);
-}
+const q1 = pgClient.query('SELECT pg_sleep($1);', [sleep]);
+    // ruleid: express-pg-sqli
+    .query(`SELECT pg_sleep(${req.body.sleep});`)
 
-// VULNERABLE: template literal
-async function getUserById(id: string) {
-  const sql = `SELECT * FROM users WHERE id = ${id}`;
-  return query(sql);
-}
+const q2 = pgClient
+// ok: express-pg-sqli
+.query(text,values)
 
-// VULNERABLE: dynamic ORDER BY
-async function getUsers(sortCol: string) {
-  const sql = `SELECT * FROM users ORDER BY ${sortCol}`;
-  return query(sql);
-}
+const q3 = pgClient
+// ruleid: express-pg-sqli
+.query(text1)
 
 
-// VULNERABLE: login — classic auth bypass target
-async function login(username: string, password: string) {
-  const sql =
-    "SELECT * FROM users WHERE username = '" +
-    username +
-    "' AND password = '" +
-    password +
-    "'";
-  return query(sql);
-}
+await client.end()
 
-// SAFE: parameterized query (control — should NOT fire)
-async function getUserByIdSafe(id: string) {
-  return query("SELECT * FROM users WHERE id = $1", [id]);
 }
