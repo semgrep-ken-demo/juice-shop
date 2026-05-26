@@ -1,37 +1,46 @@
-import { Pool } from "pg";
+import { Client } from "pg";
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const client = new Client({ connectionString: process.env.DATABASE_URL });
+let connected = false;
+
+async function query(text: string, values?: unknown[]) {
+  if (!connected) {
+    await client.connect();
+    connected = true;
+  }
+  return client.query(text, values);
+}
 
 // VULNERABLE: string concatenation
 async function getUserByName(name: string) {
-  const query = "SELECT * FROM users WHERE name = '" + name + "'";
-  return pool.query(query);
+  const sql = "SELECT * FROM users WHERE name = '" + name + "'";
+  return query(sql);
 }
 
 // VULNERABLE: template literal
 async function getUserById(id: string) {
-  const query = `SELECT * FROM users WHERE id = ${id}`;
-  return pool.query(query);
+  const sql = `SELECT * FROM users WHERE id = ${id}`;
+  return query(sql);
 }
 
 // VULNERABLE: dynamic ORDER BY
 async function getUsers(sortCol: string) {
-  const query = `SELECT * FROM users ORDER BY ${sortCol}`;
-  return pool.query(query);
+  const sql = `SELECT * FROM users ORDER BY ${sortCol}`;
+  return query(sql);
 }
 
 // VULNERABLE: login — classic auth bypass target
 async function login(username: string, password: string) {
-  const query =
+  const sql =
     "SELECT * FROM users WHERE username = '" +
     username +
     "' AND password = '" +
     password +
     "'";
-  return pool.query(query);
+  return query(sql);
 }
 
 // SAFE: parameterized query (control — should NOT fire)
 async function getUserByIdSafe(id: string) {
-  return pool.query("SELECT * FROM users WHERE id = $1", [id]);
+  return query("SELECT * FROM users WHERE id = $1", [id]);
 }
