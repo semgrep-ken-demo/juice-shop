@@ -31,7 +31,12 @@ await client.connect()
 const res = await client.query("INSERT INTO profiledb (profilename, profiledescription, approved) VALUES ('"+ 
 req.query.profileTitle +"', '"+ req.query.profileBody +"', 'Pending');");
 
-const q1 = pgClient
+const sleep = Number(req.body.sleep);
+if (!Number.isFinite(sleep)) {
+  throw new TypeError('Invalid req.body.sleep');
+}
+
+const q1 = pgClient.query('SELECT pg_sleep($1);', [sleep]);
     // ruleid: express-pg-sqli
     .query(`SELECT pg_sleep(${req.body.sleep});`)
 
