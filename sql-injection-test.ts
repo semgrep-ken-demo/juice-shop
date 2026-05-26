@@ -29,6 +29,7 @@ async function getUsers(sortCol: string) {
   return query(sql);
 }
 
+
 // VULNERABLE: login — classic auth bypass target
 async function login(username: string, password: string) {
   const sql =
